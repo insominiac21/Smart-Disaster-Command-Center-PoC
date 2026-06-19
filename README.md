@@ -4,6 +4,7 @@ An interactive, production-grade Emergency Operations Center (EOC) dashboard for
 
 Built using a **FastAPI backend** (REST API) and a lightweight **HTML/CSS/Vanilla JS frontend** featuring a **Leaflet.js choropleth map**, driven by three final data artifacts and a grounded, rate-limiting round-robin Gemini AI operator assistant with Qwen 2.5 7B fallback.
 
+**Live Demo: https://smart-disaster-command-center.vercel.app/**
 ---
 
 ## 1. Project Overview
