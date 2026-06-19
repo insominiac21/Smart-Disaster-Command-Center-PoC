@@ -1,368 +1,585 @@
 # 🚨 Smart Disaster Command Center PoC
 
-An interactive, production-style Emergency Operations Center (EOC) dashboard for monitoring **Floods** and **Heatwaves** across Indian districts.
+An AI-powered Emergency Operations Center (EOC) dashboard for monitoring **Floods** and **Heatwaves** across Indian districts.
 
-Built with a **FastAPI backend** and a lightweight **HTML/CSS/Vanilla JavaScript frontend**, the system combines:
-- geospatial district intelligence,
-- deterministic disaster logic,
-- district drilldown and filtering,
-- a grounded AI operator assistant,
-- and a fallback chain for reliability.
-
-**Live Demo:** https://smart-disaster-command-center.vercel.app/
+The platform combines geospatial intelligence, deterministic disaster analytics, district-level risk assessment, and a grounded AI assistant to help emergency operators identify critical regions, prioritize response efforts, and retrieve actionable insights through natural language queries.
 
 ---
 
-## 1. Project Overview
+## 🌐 Live Demo
 
-The Smart Disaster Command Center is a district-level disaster intelligence platform designed to help emergency operators quickly understand flood and heatwave risk, identify high-priority districts, and ask natural-language questions over the current command-center state.
-
-Instead of a generic chat app or a static map, this project models:
-- **Flood risk**
-- **Heatwave risk**
-- **Dual-hazard conditions**
-- **Operational priority**
-- **Actionable district summaries**
-
-The final dashboard is a lightweight operations room interface with:
-- KPI cards,
-- interactive district map,
-- live alert stream,
-- district intelligence database,
-- drilldown drawer,
-- and grounded AI assistant.
+Frontend: https://smart-disaster-command-center.vercel.app
 
 ---
 
-## 2. Problem Statement
+# 📌 Project Overview
 
-Emergency teams often struggle with:
-- fragmented data from multiple sources,
-- inconsistent district naming,
-- geospatial mismatch across datasets,
-- difficulty prioritizing districts,
-- and unsafe AI responses that hallucinate facts.
+The Smart Disaster Command Center is designed as a district-level disaster intelligence platform that transforms heterogeneous disaster datasets into operationally useful insights.
 
-This project addresses those problems by:
+The system provides:
 
-1. **Harmonizing district-level spatial data**
-2. **Aggregating flood and weather signals into district intelligence**
-3. **Computing deterministic risk tiers**
-4. **Generating human-readable district summaries**
-5. **Using a grounded AI assistant that only answers from current command-center data**
+* Interactive district map
+* Executive KPI dashboard
+* Flood and heatwave monitoring
+* Dual-hazard detection
+* District drilldowns
+* Operational alert feed
+* Grounded AI operator assistant
 
----
-
-## 3. Why These Datasets?
-
-### Flood Dataset
-Used to model flood risk because it contains:
-- latitude / longitude
-- rainfall
-- river discharge
-- water level
-- elevation
-- land cover
-- soil type
-- historical flood occurrence
-
-These variables are directly relevant to flood severity, water-danger thresholds, and hotspot detection.
-
-### Weather Dataset
-Used to model heatwave risk because it contains:
-- date
-- average temperature
-- minimum temperature
-- maximum temperature
-- precipitation
-- city
-
-These variables support heat-stress estimation and heatwave alert tiering.
-
-### GIS District Boundaries
-Used to convert point-level flood/weather observations into **district-level intelligence**.
-
-This is what makes the system operationally useful:
-- maps
-- district drilldowns
-- district search
-- district-based alerts
-- operator queries
+Unlike traditional dashboards that only visualize data, this platform generates explainable district intelligence and supports natural language exploration of current disaster conditions.
 
 ---
 
-## 4. Data Engineering & Matching Workflow
+# 🎯 Objectives
 
-The hardest part of the project was not the UI — it was making the datasets consistent.
+The platform helps answer questions such as:
 
-### Challenges Solved
-- district name mismatches
-- spelling variations
-- old administrative names
-- duplicate district-state combinations
-- polygon/point mismatch
-- geospatial alignment issues
-
-### What We Did
-1. Normalized district and state names
-2. Matched flood points to GIS districts using spatial joins
-3. Matched weather cities to district buckets
-4. Aggregated flood and weather signals by district
-5. Built a canonical district master table
-6. Enriched the GeoJSON with operational risk fields
-
-### Final Validation
-- **556 district rows**
-- **0 duplicate district-state pairs**
-- **0 missing geometries**
-- **2,833 flood joined rows**
-- **5,112 weather matched rows**
+* Which districts require immediate intervention?
+* Which districts exceed critical flood thresholds?
+* Which districts face simultaneous flood and heatwave risks?
+* Where should emergency resources be prioritized?
+* Which districts currently have insufficient response capacity?
 
 ---
 
-## 5. Disaster Logic & Data Modeling
+# 🏗️ System Architecture
 
-The platform models **exactly two disaster types**:
+```text
+                  ┌─────────────────┐
+                  │   Frontend UI   │
+                  │ HTML/CSS/JS     │
+                  └────────┬────────┘
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │ FastAPI Backend │
+                  └────────┬────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
 
-### A. Floods
-Tracked metrics:
-- water level above danger line
-- rainfall intensity
-- active flood hotspots
-- response teams deployed
+  District Data      AI Assistant      Alert Engine
+  Processing         Grounding         Risk Logic
 
-Derived fields:
-- flood risk score
-- flood severity
-- flood risk flag
+        ▼                  ▼                  ▼
 
-### B. Heatwaves
-Tracked metrics:
-- ambient temperature
-- WBGT proxy / heat stress proxy
-- vulnerable clusters
-- heat alert tier
-
-Derived fields:
-- heat risk score
-- heat alert tier
-- heat severity flag
-
-### Dual Hazard
-A district is marked as dual hazard when both flood and heat risk are active at the same time.
+ Flood Dataset     Gemini/Qwen      Risk Scores
+ Weather Dataset   Fallback Chain   Severity Tiers
+ GIS Boundaries    Query Routing    Alerts
+```
 
 ---
 
-## 6. Risk Scoring Methodology
+# 📊 Datasets Used
 
-Risk scoring is deterministic and explainable.
+## 1. Flood Dataset
 
-### Flood Risk Score
-Flood risk is derived from:
-- flood occurrence rate
-- rainfall intensity
-- river discharge
-- water level above danger line
-- historical flood signal
+Used for flood-risk estimation.
 
-### Heat Risk Score
-Heat risk is derived from:
-- average temperature
-- maximum temperature
-- precipitation deficit proxy
-- heat stress / WBGT proxy
+Features include:
 
-### Overall Risk Score
-Overall risk combines flood and heat signals into a single operational priority score.
-
-### Severity Buckets
-For dashboard usability, severity buckets are **calibrated** so the command center has meaningful distribution and not every district falls into the same category.
-
-The final severity tiers are:
-
-- **Low**
-- **Moderate**
-- **High**
-- **Critical**
-- **Extreme**
-
-> Note: The assistant still preserves the hard operational threshold for queries such as “water levels have exceeded the danger line by more than 1.5 meters.”  
-> The 1.5m rule is a strict command-center threshold and is not relaxed.
+* Latitude
+* Longitude
+* Rainfall
+* River discharge
+* Water level
+* Elevation
+* Land cover
+* Soil type
+* Historical flood occurrence
 
 ---
 
-## 7. Qwen Intelligence Generation
+## 2. Weather Dataset
 
-The project uses Qwen offline to convert structured district signals into readable operational intelligence.
+Used for heatwave modeling.
 
-### Inputs
-For each district:
-- flood severity
-- heat alert tier
-- overall risk score
-- dual hazard flag
-- response team status
-- water level above danger line
+Features include:
 
-### Outputs
-Qwen generates:
-- archetype name
-- risk flags
-- district summary
-- recommended actions
-
-### Why It Matters
-The dashboard is not just scoring districts — it explains them.
-
-Example output:
-- “Critical Flood Severity”
-- “Dual Hazard”
-- “Deploy additional response teams”
-- “Prepare for potential evacuation”
-
-The raw Qwen output is cleaned and stored in:
-
-`artifacts/district_insights_final.jsonl`
+* Average temperature
+* Maximum temperature
+* Minimum temperature
+* Precipitation
+* Wind speed
+* Atmospheric pressure
 
 ---
 
-## 8. AI Reliability & Grounding Strategy
+## 3. GIS District Boundaries
 
-This is one of the core evaluation criteria of the assignment.
+District shapefiles are used to:
 
-### Grounding Approach
-The assistant **never answers from model memory alone**.
-
-It follows a strict pipeline:
-
-1. **Intent classification**
-2. **Threshold/entity extraction**
-3. **Deterministic filtering over the district dataset**
-4. **Context injection of only matching districts**
-5. **LLM response synthesis**
-6. **Fallback to a second model**
-7. **Final deterministic fallback if needed**
-
-### Supported Intent Types
-- Cross-disaster analysis
-- Threshold filtering
-- Resource optimization
-- District summary
-- State summary
-- Risk ranking
-- Operational recommendation
-
-### Example
-If the operator asks:
-
-> “List all districts where water levels have exceeded the danger line by more than 1.5 meters.”
-
-the system:
-- extracts `water_level_above_danger_m > 1.5`,
-- filters the local district data,
-- passes only matching rows to the assistant,
-- and returns a grounded answer.
-
-### Fallback Chain
-1. **Gemini 2.5 Flash** via round robin
-2. **Qwen 2.5 7B Instruct** via HuggingFace Inference API
-3. **Rule-based deterministic response**
-
-This means the dashboard does not fail when one provider is rate-limited.
-
-### Refusal Policy
-If a query is outside the current command-center dataset, the assistant responds gracefully:
-
-> “Information unavailable in current command center dataset.”
+* Map observations to districts
+* Aggregate risk metrics
+* Enable district drilldowns
+* Support district-level intelligence
 
 ---
 
-## 9. Dashboard Features
+# ⚙️ Data Engineering Pipeline
 
-### Executive Metrics Grid
-Top summary cards for:
-- Total Active Alerts
-- High-Risk Districts
-- Active Flood Hotspots
-- Total Response Teams Deployed
-- Dual Hazard Districts
-- Critical Flood Districts
-- Extreme Risk Districts
+The project performs extensive preprocessing and harmonization.
 
-### Live Alert Stream
-A scrollable tactical feed of:
-- flood alerts
-- heat alerts
-- dual hazard alerts
-- critical districts
+## Challenges Solved
 
-### District Intelligence Database
-Searchable, filterable district explorer with:
-- district search
-- state filter
-- flood severity
-- heat alert tier
-- dual hazard
-- operational priority
-- response teams
-- risk score range
+* District naming inconsistencies
+* State naming mismatches
+* Duplicate administrative entries
+* Spatial alignment issues
+* Point-to-polygon mapping
 
-### District Drilldown Drawer
-When a district is selected, the UI shows:
-- district profile
-- flood metrics
-- heat metrics
-- risk indicators
-- risk flags
-- summary
-- recommended actions
-- operational priority
+## Workflow
 
-### Grounded AI Operator Assistant
-A chat interface that can answer only from the current district intelligence data.
+1. Clean district and state names
+2. Perform geospatial joins
+3. Match weather observations to districts
+4. Aggregate flood signals
+5. Aggregate weather signals
+6. Generate district-level intelligence
+7. Export enriched GeoJSON
+
+### Final Dataset Statistics
+
+| Metric                         | Value |
+| ------------------------------ | ----- |
+| Districts                      | 556   |
+| Flood Records Joined           | 2,833 |
+| Weather Records Matched        | 5,112 |
+| Duplicate District-State Pairs | 0     |
+| Missing Geometries             | 0     |
 
 ---
 
-## 10. Why the Dashboard Is Useful
+# 🌊 Flood Risk Modeling
 
-The dashboard is designed for emergency operators, not casual browsing.
+Flood risk is calculated using:
 
-It helps answer:
-- Which districts are critical right now?
-- Which districts need immediate deployment?
-- Which districts face both heat and flood risk?
-- Which districts exceed water danger thresholds?
-- Which hotspots have zero response teams?
+* Rainfall intensity
+* River discharge
+* Water level
+* Historical flood occurrence
+* Elevation-based vulnerability
 
-This directly matches the assignment’s expected use cases.
+Derived outputs:
+
+* Flood Risk Score
+* Flood Severity
+* Danger Line Exceedance
+* Flood Alert Status
 
 ---
 
-## 11. Repository Structure
+# 🌡️ Heatwave Risk Modeling
+
+Heatwave risk is estimated using:
+
+* Average temperature
+* Maximum temperature
+* Heat stress proxy
+* Precipitation deficit proxy
+
+Derived outputs:
+
+* Heat Risk Score
+* Heat Alert Tier
+* Heat Severity
+
+---
+
+# ⚠️ Dual Hazard Detection
+
+Districts are flagged as **Dual Hazard** when:
+
+* Significant flood risk exists
+* Significant heatwave risk exists
+
+simultaneously.
+
+This enables prioritization of regions facing compound disasters.
+
+---
+
+# 📈 Risk Scoring Framework
+
+The system combines flood and heatwave indicators into a unified operational score.
+
+Severity buckets:
+
+* Low
+* Moderate
+* High
+* Critical
+* Extreme
+
+The scoring framework is deterministic and explainable, allowing operators to trace every risk classification back to measurable inputs.
+
+---
+
+# 🤖 AI District Intelligence Generation
+
+Structured district signals are converted into human-readable intelligence using Qwen.
+
+Inputs:
+
+* Flood severity
+* Heat alert tier
+* Risk score
+* Dual hazard flag
+* Response team count
+* Danger line exceedance
+
+Generated outputs:
+
+* District archetype
+* Summary
+* Risk flags
+* Recommended actions
+
+Example:
+
+> Critical Flood Severity
+> Water levels significantly exceed danger threshold.
+> Immediate deployment and evacuation preparation recommended.
+
+Generated intelligence is stored in:
+
+```text
+artifacts/district_insights_final.jsonl
+```
+
+---
+
+# 🧠 AI Reliability & Grounding
+
+One of the primary goals of this project is reliable AI behavior.
+
+## Grounding Strategy
+
+The assistant never relies solely on model memory.
+
+Pipeline:
+
+1. Intent Classification
+2. Entity Extraction
+3. Threshold Parsing
+4. Deterministic Dataset Filtering
+5. Context Injection
+6. LLM Synthesis
+7. Fallback Routing
+
+---
+
+## Example Query
+
+Operator asks:
+
+> List all districts where water levels exceed the danger line by more than 1.5 meters.
+
+The system:
+
+* Extracts threshold value
+* Filters district dataset
+* Retrieves matching districts
+* Injects only those records
+* Generates grounded response
+
+No hallucinated district information is permitted.
+
+---
+
+## Fallback Chain
+
+Primary:
+
+* Gemini 2.5 Flash
+
+Secondary:
+
+* Qwen 2.5 7B Instruct
+
+Final:
+
+* Deterministic rule-based response
+
+This ensures graceful degradation during API failures or rate limits.
+
+---
+
+## Refusal Policy
+
+If information does not exist in the loaded command-center dataset, the assistant responds:
+
+> Information unavailable in current command center dataset.
+
+---
+
+# 🖥️ Dashboard Features
+
+## Executive Metrics
+
+Displays:
+
+* Active Alerts
+* High Risk Districts
+* Active Flood Hotspots
+* Response Teams
+* Dual Hazard Districts
+* Critical Flood Districts
+* Extreme Risk Districts
+
+---
+
+## Interactive District Map
+
+Provides:
+
+* District selection
+* Risk visualization
+* Severity overlays
+* Geographic exploration
+
+---
+
+## Alert Feed
+
+Real-time operational stream displaying:
+
+* Flood alerts
+* Heatwave alerts
+* Dual hazard alerts
+* Critical district alerts
+
+---
+
+## District Explorer
+
+Search and filter by:
+
+* District
+* State
+* Flood severity
+* Heat tier
+* Dual hazard
+* Risk score
+
+---
+
+## District Drilldown
+
+Displays:
+
+* Flood metrics
+* Heat metrics
+* Response status
+* Summary
+* Risk indicators
+* Recommended actions
+
+---
+
+## AI Operator Assistant
+
+Supports:
+
+* Threshold filtering
+* District summaries
+* State summaries
+* Resource allocation queries
+* Cross-disaster analysis
+* Risk ranking
+
+---
+
+# 📁 Repository Structure
 
 ```text
 smart-disaster-command-center/
+│
 ├── backend/
 │   ├── main.py
-│   └── services/
-│       ├── geo_service.py
-│       ├── insights_service.py
-│       └── gemini_service.py
+│   ├── services/
+│   └── routers/
+│
 ├── frontend/
 │   ├── index.html
 │   ├── css/
-│   │   └── styles.css
 │   └── js/
-│       └── app.js
+│
 ├── artifacts/
 │   ├── district_master_enriched.geojson
 │   ├── district_insights_final.jsonl
 │   └── thresholds.json
+│
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── WORKFLOW.md
 │   └── DEPLOYMENT.md
-├── gemini_round_robin.py
+│
 ├── requirements.txt
 ├── .env.example
-└── LICENSE
+└── README.md
+```
+
+---
+
+# 🚀 Local Setup
+
+## Prerequisites
+
+* Python 3.9+
+* Git
+
+---
+
+## Clone Repository
+
+```bash
+git clone https://github.com/insominiac21/Smart-Disaster-Command-Center-PoC.git
+
+cd Smart-Disaster-Command-Center-PoC
+```
+
+---
+
+## Create Virtual Environment
+
+Windows
+
+```bash
+python -m venv .venv
+
+.venv\Scripts\activate
+```
+
+Linux/macOS
+
+```bash
+python -m venv .venv
+
+source .venv/bin/activate
+```
+
+---
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Add API keys.
+
+---
+
+## Run Backend
+
+```bash
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+---
+
+## Open Application
+
+```text
+http://localhost:8000
+```
+
+---
+
+# 🔑 Environment Variables
+
+```env
+GEMINI_API_KEY1=
+GEMINI_API_KEY2=
+GEMINI_API_KEY3=
+GEMINI_API_KEY4=
+GEMINI_API_KEY5=
+
+HF_TOKEN=
+
+FRONTEND_URL=https://smart-disaster-command-center.vercel.app
+```
+
+---
+
+# ☁️ Deployment
+
+## Backend
+
+Recommended:
+
+* Render
+* Railway
+
+Health Endpoint:
+
+```text
+/api/health
+```
+
+---
+
+## Frontend
+
+Recommended:
+
+* Vercel
+
+---
+
+## Deployment Workflow
+
+1. Deploy backend
+2. Verify health endpoint
+3. Deploy frontend
+4. Configure CORS
+5. Redeploy backend
+
+---
+
+# 📋 FIN100 Evaluation Mapping
+
+| Requirement         | Implementation                                       |
+| ------------------- | ---------------------------------------------------- |
+| AI Reliability      | Grounding, fallback chain, refusal policy            |
+| Disaster Modeling   | Flood, heatwave and dual-hazard logic                |
+| Dashboard Usability | KPI cards, map, drilldowns, filtering                |
+| Documentation       | README, workflow, architecture docs                  |
+| Explainability      | Deterministic risk scoring and district intelligence |
+
+---
+
+# ⚠️ Limitations
+
+* Uses static disaster datasets
+* Not connected to live government feeds
+* Severity buckets are calibrated for demonstration
+* Proof-of-concept system only
+* Not intended for real emergency deployment
+
+---
+
+# 🔮 Future Enhancements
+
+* Live IMD integration
+* NDMA integration
+* Historical trend analytics
+* Resource optimization engine
+* SMS alerting
+* WhatsApp notifications
+* Mobile operator interface
+
+---
+
+# 📄 License
+
+MIT License
