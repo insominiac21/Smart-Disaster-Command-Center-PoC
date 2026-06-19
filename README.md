@@ -118,7 +118,7 @@ District shapefiles are used to:
 
 # ⚙️ Data Engineering Pipeline
 
-The project performs extensive preprocessing and harmonization.
+The project performs extensive preprocessing and harmonization. Please refer to Notebook : artifacts/dataset-refiner-for-smart-disaster-command-center.ipynb
 
 ## Challenges Solved
 
