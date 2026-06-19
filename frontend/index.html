@@ -95,14 +95,15 @@
                     </select>
                 </div>
                 <div class="control-item">
-                    <label for="filterSeverity">SEVERITY LEVEL</label>
+                    <label for="filterSeverity">DISPLAY SEVERITY <span class="label-hint" title="Percentile-based display tiers using Overall Risk Score. Not the 1.5m hard threshold.">ⓘ</span></label>
                     <select id="filterSeverity" onchange="applyFilters()">
                         <option value="All">All Severities</option>
-                        <option value="Critical">Critical Only</option>
-                        <option value="High">High Severity</option>
-                        <option value="Moderate">Moderate Severity</option>
-                        <option value="Low">Low Severity</option>
+                        <option value="Critical">Critical — Top 10% Risk Score</option>
+                        <option value="High">High — Top 10–30% Risk Score</option>
+                        <option value="Moderate">Moderate — Mid 30–60% Risk Score</option>
+                        <option value="Low">Low — Bottom 40% Risk Score</option>
                     </select>
+                    <span class="calibration-note">Tiers based on overall_risk_score percentiles. AI queries use the 1.5m hard threshold.</span>
                 </div>
                 <div class="control-item search-item">
                     <label for="filterSearch">SEARCH DISTRICT</label>
@@ -132,13 +133,14 @@
                 <div class="card-body">
                     <div id="map" class="map-container"></div>
                     <div class="map-legend">
-                        <span class="legend-title">Risk Index:</span>
+                        <span class="legend-title">Display Risk Tier:</span>
                         <div class="legend-scale">
-                            <span style="background: rgba(46, 204, 113, 0.4)">Low</span>
-                            <span style="background: rgba(241, 196, 15, 0.5)">Mod</span>
-                            <span style="background: rgba(230, 126, 34, 0.6)">High</span>
-                            <span style="background: rgba(231, 76, 60, 0.8)">Crit</span>
+                            <span style="background: rgba(46, 204, 113, 0.4)" title="Bottom 40% of overall_risk_score">Low</span>
+                            <span style="background: rgba(241, 196, 15, 0.5)" title="40th–70th percentile">Mod</span>
+                            <span style="background: rgba(230, 126, 34, 0.6)" title="70th–90th percentile">High</span>
+                            <span style="background: rgba(231, 76, 60, 0.8)" title="Top 10% overall_risk_score">Crit</span>
                         </div>
+                        <span class="calibration-note" style="font-size:0.6rem;display:block;margin-top:2px;">Percentile-calibrated display tiers</span>
                     </div>
                 </div>
             </div>

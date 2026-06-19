@@ -19,6 +19,7 @@ class GeoService:
         """Load all data on startup."""
         self._load_geojson()
         self._load_thresholds()
+        self._apply_display_severity()
 
     def _load_geojson(self):
         """Load and parse district_master_enriched.geojson."""
@@ -41,6 +42,38 @@ class GeoService:
         with open(thresholds_path, "r") as f:
             self.thresholds = json.load(f)
         print("[OK] Loaded thresholds")
+
+    def _apply_display_severity(self):
+        """
+        Reclassify flood_severity for dashboard display using percentile-based
+        overall_risk_score tiers from thresholds.json [display_severity_tiers].
+
+        IMPORTANT: This changes only the display label used by the map and table.
+        The hard operational threshold (water_level_above_danger_m > 1.5m) is
+        preserved in thresholds.json and used exclusively by the AI rule engine.
+        """
+        tiers = self.thresholds.get("display_severity_tiers", {})
+        low_max      = tiers.get("low_max",      26.04)
+        moderate_max = tiers.get("moderate_max", 31.76)
+        high_max     = tiers.get("high_max",     44.57)
+
+        def classify(score):
+            try:
+                s = float(score)
+            except (TypeError, ValueError):
+                return "Low"
+            if s <= low_max:
+                return "Low"
+            elif s <= moderate_max:
+                return "Moderate"
+            elif s <= high_max:
+                return "High"
+            else:
+                return "Critical"
+
+        self.df["flood_severity"]  = self.df["overall_risk_score"].apply(classify)
+        self.gdf["flood_severity"] = self.gdf["overall_risk_score"].apply(classify)
+        print(f"[OK] Display severity recalibrated (Low/Moderate/High/Critical using percentile tiers)")
 
     def get_thresholds(self) -> Dict[str, Any]:
         """Return thresholds."""

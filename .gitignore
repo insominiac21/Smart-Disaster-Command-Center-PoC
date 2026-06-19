@@ -40,3 +40,4 @@ Thumbs.db
 *.tmp
 env.example
 local-run.txt
+calibrate_thresholds.py

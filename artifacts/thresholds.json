@@ -1,10 +1,23 @@
 {
+  "_comment": "thresholds.json \u2014 Smart Disaster Command Center\nHARD OPERATIONAL THRESHOLD: water_level_above_danger_m > 1.5m is a required danger-line query rule (FIN100 assignment requirement). Do NOT change.\nDISPLAY SEVERITY TIERS: percentile-based. Recalibrate with calibrate_thresholds.py.",
+  "hard_operational": {
+    "water_level_above_danger_m": 1.5,
+    "_note": "REQUIRED: This 1.5m threshold is used for AI assistant queries like 'water levels have exceeded the danger line by more than 1.5 meters'. This is a hard operational rule \u2014 never change it."
+  },
+  "display_severity_tiers": {
+    "_note": "These are display-only thresholds for the dashboard map and table. They use percentile-based calibration so the distribution is operationally meaningful: Low=bottom 40%, Moderate=40-70%, High=70-90%, Critical=top 10%.",
+    "low_max": 26.04,
+    "moderate_max": 31.76,
+    "high_max": 44.57
+  },
   "flood": {
+    "_note": "Water level thresholds for flood severity classification in the AI rule engine",
     "moderate": 0.5,
     "high": 1.0,
     "critical": 1.5
   },
   "heat": {
+    "_note": "WBGT-based heat alert tier thresholds (\u00b0C)",
     "yellow": 28,
     "orange": 30,
     "red": 32
