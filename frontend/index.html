@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Command Center | Operational Intelligence</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet.js JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="header-main">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">LIVE PATROL</span>
+                </div>
+                <h1>DISASTER COMMAND CENTER</h1>
+                <p class="subtitle">Operational Monitoring Room • India Hazards Control</p>
+            </div>
+            <div class="header-metadata">
+                <div class="meta-item">
+                    <span class="meta-label">REGION</span>
+                    <span class="meta-value">INDIA (556 DIST.)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">AI ENGINE</span>
+                    <span class="meta-value">GEMINI 2.5 GROUNDED</span>
+                </div>
+                <div class="meta-item" id="sys-clock">
+                    <span class="meta-label">SYS TIME</span>
+                    <span class="meta-value" id="clock-display">00:00:00 UTC</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOP KPI ROW -->
+        <section class="kpi-row">
+            <div class="kpi-card red-glow">
+                <div class="kpi-inner">
+                    <div class="kpi-icon">🚨</div>
+                    <div class="kpi-stat">
+                        <span class="kpi-label">Active Alerts</span>
+                        <span class="kpi-value" id="kpiTotalAlerts">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="kpi-card orange-glow">
+                <div class="kpi-inner">
+                    <div class="kpi-icon">⚡</div>
+                    <div class="kpi-stat">
+                        <span class="kpi-label">Dual Hazards</span>
+                        <span class="kpi-value" id="kpiDualHazard">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="kpi-card blue-glow">
+                <div class="kpi-inner">
+                    <div class="kpi-icon">🌊</div>
+                    <div class="kpi-stat">
+                        <span class="kpi-label">Critical Floods</span>
+                        <span class="kpi-value" id="kpiCriticalFloods">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="kpi-card amber-glow">
+                <div class="kpi-inner">
+                    <div class="kpi-icon">🔥</div>
+                    <div class="kpi-stat">
+                        <span class="kpi-label">Extreme Risk</span>
+                        <span class="kpi-value" id="kpiExtremeRisk">-</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTER TOOLBAR (Horizontal) -->
+        <section class="control-panel">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="filterDisaster">HAZARD TYPE</label>
+                    <select id="filterDisaster" onchange="applyFilters()">
+                        <option value="All">All Hazards</option>
+                        <option value="Floods">Floods Only</option>
+                        <option value="Heatwaves">Heatwaves Only</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label for="filterSeverity">SEVERITY LEVEL</label>
+                    <select id="filterSeverity" onchange="applyFilters()">
+                        <option value="All">All Severities</option>
+                        <option value="Critical">Critical Only</option>
+                        <option value="High">High Severity</option>
+                        <option value="Moderate">Moderate Severity</option>
+                        <option value="Low">Low Severity</option>
+                    </select>
+                </div>
+                <div class="control-item search-item">
+                    <label for="filterSearch">SEARCH DISTRICT</label>
+                    <div class="search-wrapper">
+                        <input 
+                            type="text" 
+                            id="filterSearch" 
+                            placeholder="Type district name (e.g. Thane, Patna)..." 
+                            onkeyup="applyFilters()"
+                        >
+                        <span class="search-icon">🔍</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN OPERATIONAL GRID (Map & Alert stream) -->
+        <section class="operational-grid">
+            <!-- Left: Leaflet Map -->
+            <div class="grid-card map-card">
+                <div class="card-header">
+                    <h3>🗺️ Risk Assessment Map</h3>
+                    <div class="card-action">
+                        <span class="badge">GeoJSON Choropleth</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="map" class="map-container"></div>
+                    <div class="map-legend">
+                        <span class="legend-title">Risk Index:</span>
+                        <div class="legend-scale">
+                            <span style="background: rgba(46, 204, 113, 0.4)">Low</span>
+                            <span style="background: rgba(241, 196, 15, 0.5)">Mod</span>
+                            <span style="background: rgba(230, 126, 34, 0.6)">High</span>
+                            <span style="background: rgba(231, 76, 60, 0.8)">Crit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Alert Feed -->
+            <div class="grid-card feed-card">
+                <div class="card-header">
+                    <h3>🔔 Live Alert Feed</h3>
+                    <div class="card-action">
+                        <span class="pulse-indicator"></span>
+                        <span class="badge-feed">Real-time Stream</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="alertsContainer" class="alerts-container">
+                        <p class="loading">Loading alerts stream...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MIDDLE: DISTRICT DETAIL PANEL -->
+        <section id="detailSection" class="detail-panel-section" style="display: none;">
+            <div class="grid-card detail-card card-glow">
+                <div class="card-header-detail">
+                    <h3 id="detailTitle">📍 District Details</h3>
+                    <button onclick="closeDetail()" class="btn-close">✕ Close Panel</button>
+                </div>
+                <div class="card-body" id="detailContent">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTTOM: GROUNDED AI OPERATOR ASSISTANT -->
+        <section class="assistant-section">
+            <div class="grid-card assistant-card">
+                <div class="card-header">
+                    <h3>🤖 Grounded AI Operator Assistant</h3>
+                    <span class="badge badge-grounded">Data-Isolated Model</span>
+                </div>
+                <div class="card-body">
+                    <div class="assistant-layout">
+                        <div class="assistant-input-area">
+                            <p class="assistant-disclaimer">
+                                ⚠️ Gemini answers using only current dashboard coordinates. It will refuse out-of-scope historical or general queries.
+                            </p>
+                            <!-- AI ASSISTANT CONTEXT PANEL -->
+                            <div class="assistant-context-panel">
+                                <strong>🧠 Assistant Architecture</strong>
+                                <div class="ai-tiers-row">
+                                    <span class="ai-tier tier-primary">⚡ Primary: Gemini 2.5 Flash</span>
+                                    <span class="ai-tier-sep">→</span>
+                                    <span class="ai-tier tier-fallback">🔄 Fallback: Qwen 2.5 7B (HF Inference)</span>
+                                    <span class="ai-tier-sep">→</span>
+                                    <span class="ai-tier tier-rule">⚙️ Final: Rule-Based Engine</span>
+                                </div>
+                                <strong style="margin-top:0.5rem;">🔒 Grounded District Intelligence</strong>
+                                <div class="context-badge-grid">
+                                    <span class="context-badge">556 District Profiles loaded</span>
+                                    <span class="context-badge">Deterministic Query Processing</span>
+                                    <span class="context-badge">No External Knowledge</span>
+                                    <span class="context-badge">Flood &amp; Heat risk metrics</span>
+                                    <span class="context-badge">Response team status</span>
+                                    <span class="context-badge">Water danger levels</span>
+                                </div>
+                            </div>
+                            <div class="textarea-wrapper">
+                                <textarea 
+                                    id="assistantQuestion" 
+                                    placeholder="Type operational inquiry (e.g. Which districts face both heatwave and flood risks?)..."
+                                    rows="3"
+                                ></textarea>
+                                <button onclick="submitQuestion()" class="btn-primary">Query Assistant</button>
+                            </div>
+                            <div class="quick-queries">
+                                <span class="quick-queries-label">QUICK INQUIRIES:</span>
+                                <div class="chips-container">
+                                    <button class="chip" onclick="setQuestion('Which districts face both flood and heatwave risks?')">Which districts face both flood and heatwave risks?</button>
+                                    <button class="chip" onclick="setQuestion('List districts exceeding danger level by 1.5 meters.')">List districts exceeding danger level by 1.5 meters.</button>
+                                    <button class="chip" onclick="setQuestion('Show critical flood districts with no response teams.')">Show critical flood districts with no response teams.</button>
+                                    <button class="chip" onclick="setQuestion('Summarize Maharashtra.')">Summarize Maharashtra.</button>
+                                    <button class="chip" onclick="setQuestion('Recommend deployment priorities.')">Recommend deployment priorities.</button>
+                                    <button class="chip" onclick="setQuestion('Show highest risk districts.')">Show highest risk districts.</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="assistant-response-area">
+                            <span class="response-header">ASSISTANT LOG CONSOLE</span>
+                            <div id="assistantResponse" class="response-container" style="display:none;">
+                                <div class="response-message" id="assistantAnswer"></div>
+                            </div>
+                            <div id="assistantPlaceholder" class="response-placeholder">
+                                Waiting for query input...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXECUTIVE INSIGHTS & EXPLANATORY FRAMEWORKS -->
+        <section class="frameworks-section">
+            <div class="frameworks-grid">
+                <!-- Dynamic Executive Insights Card (Section 7) -->
+                <div class="executive-insights-card">
+                    <div class="card-header">
+                        <h3>📈 Executive Situation Room Insights</h3>
+                        <span class="badge">National Dynamic Overview</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="subtitle" style="margin-bottom: 0.5rem;">Auto-Generated Summary • Rule-Based Operational Synthesis</p>
+                        <div id="executiveInsightsText" class="executive-insights-content">
+                            Gathering national situation metrics...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Risk Score Calculations (Section 3) -->
+                <div class="collapsible-card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('riskScoreCalc')">
+                        <span>🎯 How Risk Scores Are Calculated</span>
+                        <span class="toggle-arrow" id="arrow-riskScoreCalc">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="riskScoreCalc">
+                        <p>A district's overall risk profile is computed deterministically through a weighted combination of flood hazard metrics and extreme thermal exposure values:</p>
+                        <ul>
+                            <li><strong>Flood Risk Score (60% weight):</strong> Derived from flood rate, rainfall, river discharge averages, water levels above warning levels, and historical flood signals.</li>
+                            <li><strong>Heat Risk Score (40% weight):</strong> Derived from average temperatures, extreme temperature events, and precipitation deficits.</li>
+                            <li><strong>Dual Hazard Escalation:</strong> Districts experiencing simultaneous hazard alerts receive an automatic risk index increase.</li>
+                        </ul>
+                        <div class="formula-box">
+Overall Risk = (0.6 × Flood Risk) + (0.4 × Heat Risk) + Dual Hazard Adjustment
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Alert Methodology (Section 4) -->
+                <div class="collapsible-card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('alertLogic')">
+                        <span>🚨 Hazard Alert Logic & Threshold Rules</span>
+                        <span class="toggle-arrow" id="arrow-alertLogic">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="alertLogic">
+                        <p>The EOC defines hazard alert tiers based on local physical measurements:</p>
+                        <ul>
+                            <li><strong>Flood Severity Levels:</strong>
+                                <ul>
+                                    <li><em>Critical:</em> Water levels exceed danger mark by &gt; 1.5 meters.</li>
+                                    <li><em>High:</em> Water levels exceed danger mark by 1.0 to 1.5 meters.</li>
+                                    <li><em>Moderate:</em> Water levels exceed danger mark by 0.5 to 1.0 meters.</li>
+                                    <li><em>Low:</em> Routine conditions or water level &lt; 0.5 meters.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Heat Alert Tiers:</strong>
+                                <ul>
+                                    <li><em>Red:</em> Temperature exceeds 32°C WBGT threshold.</li>
+                                    <li><em>Orange:</em> Temperature ranges from 30°C to 32°C WBGT.</li>
+                                    <li><em>Yellow:</em> Temperature ranges from 28°C to 30°C WBGT.</li>
+                                    <li><em>Normal:</em> Temperature &lt; 28°C.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Dual Hazard Alerts:</strong> Triggered when a district has active alerts in both categories.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 3. Operational Priority Framework (Section 5) -->
+                <div class="collapsible-card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('priorityLogic')">
+                        <span>⚡ Operational Priority Framework</span>
+                        <span class="toggle-arrow" id="arrow-priorityLogic">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="priorityLogic">
+                        <p>Operational priority determines EOC resource routing and dispatch hierarchies. It categorizes districts into four priority levels based on overall hazard severity and risk index values:</p>
+                        <ul>
+                            <li><strong>Critical (Priority 1):</strong> Overall Risk &gt; 75, or dual hazards present, or critical flood active with limited response team coverage. Immediate action required.</li>
+                            <li><strong>High (Priority 2):</strong> Overall Risk between 50 and 75, or high flood alerts active. Fast mobilization.</li>
+                            <li><strong>Moderate (Priority 3):</strong> Overall Risk between 25 and 50, or moderate hazard flags active. Regular patrols.</li>
+                            <li><strong>Low (Priority 4):</strong> Overall Risk &lt; 25. Routine command center monitoring.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 4. Decision Support Panel (Section 6) -->
+                <div class="collapsible-card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('actionsLogic')">
+                        <span>🛠️ Recommended Actions Framework</span>
+                        <span class="toggle-arrow" id="arrow-actionsLogic">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="actionsLogic">
+                        <p>The EOC decision support engine translates incoming threat metrics into standard operating procedures (SOPs):</p>
+                        <ul>
+                            <li><strong>Critical Flood:</strong> deploy additional response teams, initialize shoreline barrier deployments.</li>
+                            <li><strong>High Water Level:</strong> activate evacuation readiness protocols, coordinate local shelters.</li>
+                            <li><strong>Dual Hazard:</strong> initialize multi-agency emergency operations (coordinate flood rescue + heat shelters).</li>
+                            <li><strong>No Response Teams in Hotspots:</strong> prioritize instant team dispatch to avoid coverage gaps.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DISTRICT SUMMARY DATABASE TABLE (Collapsible with Advanced Filters) -->
+        <section class="database-section">
+            <div class="grid-card table-card">
+                <div class="card-header" onclick="toggleTableCollapse()" style="cursor: pointer;">
+                    <h3>📋 District Intelligence Database</h3>
+                    <div class="table-actions" onclick="event.stopPropagation()">
+                        <span class="table-count" id="tableRecordCount">Showing 25 records</span>
+                        <button class="btn-export" onclick="exportFilteredCSV(event)">📥 Export Filtered Results</button>
+                        <span class="toggle-icon" id="tableToggleIcon">▼</span>
+                    </div>
+                </div>
+                <div class="card-body" id="collapsibleTableContainer">
+                    
+                    <!-- Advanced Filters Grid (Section 1) -->
+                    <div class="advanced-filters-grid">
+                        <div class="control-item">
+                            <label for="dbFilterState">STATE / PROVINCE</label>
+                            <select id="dbFilterState" onchange="applyDBFilters()">
+                                <option value="All">All States</option>
+                                <!-- Populated dynamically by JS -->
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterFlood">FLOOD SEVERITY</label>
+                            <select id="dbFilterFlood" onchange="applyDBFilters()">
+                                <option value="All">All Severities</option>
+                                <option value="Critical">Critical</option>
+                                <option value="High">High</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterHeat">HEAT ALERT TIER</label>
+                            <select id="dbFilterHeat" onchange="applyDBFilters()">
+                                <option value="All">All Tiers</option>
+                                <option value="Red">Red</option>
+                                <option value="Orange">Orange</option>
+                                <option value="Yellow">Yellow</option>
+                                <option value="Normal">Normal</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterDual">DUAL HAZARD</label>
+                            <select id="dbFilterDual" onchange="applyDBFilters()">
+                                <option value="All">All</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterPriority">OPERATIONAL PRIORITY</label>
+                            <select id="dbFilterPriority" onchange="applyDBFilters()">
+                                <option value="All">All Priorities</option>
+                                <option value="Critical">Critical</option>
+                                <option value="High">High</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterTeams">RESPONSE TEAMS DEPLOYED</label>
+                            <select id="dbFilterTeams" onchange="applyDBFilters()">
+                                <option value="All">All Counts</option>
+                                <option value="0">0 Deployed</option>
+                                <option value="2">2 Deployed</option>
+                                <option value="3">3 Deployed</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterWater">WATER LEVEL OVER DANGER</label>
+                            <select id="dbFilterWater" onchange="applyDBFilters()">
+                                <option value="All">All Levels</option>
+                                <option value="0.0">&gt; 0.0m</option>
+                                <option value="0.5">&gt; 0.5m</option>
+                                <option value="1.0">&gt; 1.0m</option>
+                                <option value="1.5">&gt; 1.5m</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label for="dbFilterHistory">HISTORICAL FLOOD SIGNAL</label>
+                            <select id="dbFilterHistory" onchange="applyDBFilters()">
+                                <option value="All">All Ratios</option>
+                                <option value="0.25">&gt; 0.25 signal</option>
+                                <option value="0.50">&gt; 0.50 signal</option>
+                                <option value="0.75">&gt; 0.75 signal</option>
+                            </select>
+                        </div>
+                        <div class="control-item" style="grid-column: span 2;">
+                            <label>RISK SCORE RANGE</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="dbFilterRiskMin" placeholder="Min Score (e.g. 0)" min="0" max="100" style="width:50%;" onchange="applyDBFilters()" onkeyup="applyDBFilters()">
+                                <span style="font-size: 0.85rem; font-weight: 500;">to</span>
+                                <input type="number" id="dbFilterRiskMax" placeholder="Max Score (e.g. 100)" min="0" max="100" style="width:50%;" onchange="applyDBFilters()" onkeyup="applyDBFilters()">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Quick Triggers and Search Row -->
+                    <div class="filter-action-row">
+                        <div class="filter-examples-container">
+                            <span style="font-weight: 700; color: var(--text-secondary);">QUICK FILTERS:</span>
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('critical_floods')">all Critical flood districts</button> • 
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('maharashtra')">all districts in Maharashtra</button> • 
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('dual_hazards')">all dual hazard districts</button> • 
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('high_risk')">all districts with risk score > 80</button> • 
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('zero_teams')">all districts with zero response teams</button> • 
+                            <button class="filter-example-btn" onclick="triggerQuickDBFilter('danger_threshold')">all districts exceeding 1.5m danger threshold</button> • 
+                            <button class="filter-example-btn" onclick="resetDBFilters()" style="color: var(--severity-critical-text); font-weight: 700;">Reset Filters</button>
+                        </div>
+                        <div class="control-item search-item" style="margin: 0; min-width: 280px; flex: 0 0 320px;">
+                            <div class="search-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="dbFilterSearch" 
+                                    placeholder="Search by district name, state, or ID..." 
+                                    onkeyup="applyDBFilters()"
+                                >
+                                <span class="search-icon">🔍</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="districtTable" class="district-table">
+                            <thead>
+                                <tr>
+                                    <th class="sorting-header" id="th-district" onclick="triggerSort('district')">District</th>
+                                    <th class="sorting-header" id="th-state" onclick="triggerSort('state')">State</th>
+                                    <th>Flood Severity</th>
+                                    <th>Heat Alert Tier</th>
+                                    <th>Dual Hazard</th>
+                                    <th class="sorting-header" id="th-overall_risk_score" onclick="triggerSort('overall_risk_score')">Risk Score</th>
+                                    <th class="sorting-header" id="th-water_level_above_danger_m" onclick="triggerSort('water_level_above_danger_m')">Water Above Danger</th>
+                                    <th class="sorting-header" id="th-response_teams_deployed" onclick="triggerSort('response_teams_deployed')">Response Teams</th>
+                                    <th>Operational Priority</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="10" class="loading">Loading districts database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <!-- System Statistics Dashboard Grid (Section 10) -->
+            <div class="system-statistics-grid">
+                <div class="stat-item">
+                    <span class="stat-lbl">Districts Covered</span>
+                    <span class="stat-val" id="statDistricts">556</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-lbl">Flood Records Processed</span>
+                    <span class="stat-val">2,833</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-lbl">Weather Records Processed</span>
+                    <span class="stat-val">5,112</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-lbl">District Matches</span>
+                    <span class="stat-val">556</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-lbl">Qwen Intelligence Records</span>
+                    <span class="stat-val">556</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-lbl">AI Queries Processed</span>
+                    <span class="stat-val" id="statAIQueries">0</span>
+                </div>
+            </div>
+            <p>📡 Primary Dataset: <code>district_master_enriched.geojson</code> | Narrative Insights: <code>district_insights_final.jsonl</code> | Control Panel v1.2</p>
+        </footer>
+    </div>
+
+    <!-- Slide Drawer Drilldown (Section 2) -->
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrilldownDrawer()"></div>
+    <div id="drilldownDrawer" class="side-drawer">
+        <div class="drawer-header">
+            <h2 id="drawerTitle">📍 District Drilldown</h2>
+            <button class="drawer-close-btn" onclick="closeDrilldownDrawer()">✕ Close Drawer</button>
+        </div>
+        <div class="drawer-body" id="drawerContent">
+            <!-- Populated dynamically by JS -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script>
+        // System clock helper
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            const display = document.getElementById('clock-display');
+            if (display) display.textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Table collapse helper
+        let tableCollapsed = false;
+        function toggleTableCollapse() {
+            const container = document.getElementById('collapsibleTableContainer');
+            const icon = document.getElementById('tableToggleIcon');
+            if (tableCollapsed) {
+                container.style.display = 'block';
+                icon.textContent = '▼';
+                tableCollapsed = false;
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▲';
+                tableCollapsed = true;
+            }
+        }
+    </script>
+</body>
+</html>

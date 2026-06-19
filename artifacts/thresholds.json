@@ -1,0 +1,12 @@
+{
+  "flood": {
+    "moderate": 0.5,
+    "high": 1.0,
+    "critical": 1.5
+  },
+  "heat": {
+    "yellow": 28,
+    "orange": 30,
+    "red": 32
+  }
+}
