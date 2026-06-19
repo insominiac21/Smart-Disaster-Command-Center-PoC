@@ -113,31 +113,36 @@ class AssistantResponse(BaseModel):
     answer: Optional[str] = None
     error: Optional[str] = None
 
+
 # ============================================================================
 # HEALTH CHECK
 # ============================================================================
+from fastapi import Response
 
 @app.get("/health")
 async def health_root():
-    """
-    Root health check endpoint.
-    Used by: Render Health Checks, UptimeRobot monitoring.
-    Must return HTTP 200 with no authentication required.
-    """
     return {
         "status": "healthy",
         "service": "disaster-command-center-backend",
         "version": "1.0.0",
     }
 
+@app.head("/health")
+async def health_root_head():
+    return Response(status_code=200)
+
+
 @app.get("/api/health")
 async def health_api():
-    """API-namespaced health check (mirrors /health for frontend polling)."""
     return {
         "status": "healthy",
         "service": "disaster-command-center-backend",
         "version": "1.0.0",
     }
+
+@app.head("/api/health")
+async def health_api_head():
+    return Response(status_code=200)
 
 # ============================================================================
 # KPI ENDPOINTS
