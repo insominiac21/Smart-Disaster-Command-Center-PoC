@@ -5,7 +5,6 @@
     {
       "source": "/api/:path*",
       "destination": "https://smart-disaster-command-center.onrender.com/api/:path*"
-      
     },
     {
       "source": "/(.*)",
@@ -19,6 +18,24 @@
         {
           "key": "Cache-Control",
           "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/css/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
         }
       ]
     }
